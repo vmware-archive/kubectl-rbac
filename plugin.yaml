@@ -1,0 +1,15 @@
+name: "rbac"
+shortDesc: "Inspect RBAC related properties"
+tree:
+  - name: get-roles
+    shortDesc: "Get roles for user"
+    example: "kubectl plugin rbac get-roles system:node"
+    command: "./venv/bin/python rbac.py get-roles"
+  - name: get-permissions
+    shortDesc: "Get permissions for user"
+    example: "kubectl plugin rbac get-permissions system:node"
+    command: "./venv/bin/python rbac.py get-permissions"
+  - name: get-audited-permissions
+    shortDesc: "Get used permissions as audited in the audit-log"
+    example: "kubectl plugin rbac get-audited-permissions system:node audit_log.json"
+    command: "./venv/bin/python rbac.py get-audited-permissions"

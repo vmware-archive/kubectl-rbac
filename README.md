@@ -1,1 +1,1 @@
-# k8s-reverse-rbac
+# kubectl-rbac

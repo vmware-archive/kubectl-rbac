@@ -10,10 +10,10 @@ You can read about Kubernetes Plugin [here](https://kubernetes.io/docs/tasks/ext
 
 ```bash
 cd ~/.kube/
-mkdir plugin
-cd plugin
+mkdir plugins
+cd plugins
 git clone git@github.com:octarinesec/kubectl-rbac.git \
-    && virtualenv -p python3.6 venv
+    && cd kubectl-rbac && virtualenv -p python3.6 venv
 ```
 
 ## Example & Usage

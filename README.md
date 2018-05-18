@@ -13,7 +13,7 @@ cd ~/.kube/
 mkdir plugins
 cd plugins
 git clone git@github.com:octarinesec/kubectl-rbac.git \
-    && cd kubectl-rbac && virtualenv -p python3.6 venv
+    && cd kubectl-rbac && virtualenv -p python3.6 venv && pip install -r requirements.txt
 ```
 
 ## Example & Usage

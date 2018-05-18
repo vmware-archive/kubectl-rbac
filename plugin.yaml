@@ -12,5 +12,9 @@ tree:
     command: "./venv/bin/python rbac.py get-permissions"
   - name: get-audited-permissions
     shortDesc: "Get used permissions as audited in the audit-log"
-    example: "kubectl plugin rbac get-audited-permissions system:node audit_log.json"
+    example: "kubectl plugin rbac get-audited-permissions user@octarine.com audit_log.json"
     command: "./venv/bin/python rbac.py get-audited-permissions"
+  - name: get-least-privilege
+    shortDesc: "Generate least privilege yaml based on audit log"
+    example: "kubectl plugin get-least-privilege user@octarine.com audit_log.json"
+    command: "./venv/bin/python rbac.py get-least-privilege"

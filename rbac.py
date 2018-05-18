@@ -1,5 +1,5 @@
 import os
-import sys
+import yaml
 import json
 import pprint
 import argparse
@@ -83,12 +83,50 @@ def get_users():
     return users
 
 
+def get_least_privilege_role(user, audit_log_filepath):
+    verb_to_resource = defaultdict(set)
+    ROLE = {'apiVersion': 'rbac.authorization.k8s.io/v1',
+            'kind': 'Role',
+            'metadata': {
+                'name': f'octarine:{user}',
+                'namespace': f'{NAMESPACE}'},
+            'rules': []
+            }
+    ROLE_BINDING = {'apiVersion': 'rbac.authorization.k8s.io/v1',
+                    'kind': 'RoleBinding',
+                    'metadata': {
+                        'name': f'octarine:{user}',
+                        'namespace': f'{NAMESPACE}'},
+                    'roleRef': {'apiGroup': 'rbac.authorization.k8s.io',
+                                'kind': 'Role',
+                                'name': f'octarine:{user}'},
+                    'subjects': [
+                            {'apiGroup': 'rbac.authorization.k8s.io',
+                             'kind': 'User',
+                             'name': f'{user}'}
+                        ]
+                    }
+    res = get_audited_permissions(user, audit_log_filepath)
+    for permission in res.values():
+        for i in permission:
+            if i.startswith('io.k8s.authorization.rbac.v1'):
+                resource, verb = i.split('.')[-2:]
+                verb_to_resource[verb].add(resource)
+    rules = []
+    for verb, resources in verb_to_resource.items():
+        rules.append({'apiGroups': [''],
+                      'resources': list(resources),
+                      'verbs': [verb]})
+    ROLE['rules'] = rules
+
+    return ROLE, ROLE_BINDING
+
+
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='subcommands',
-                                       description='valid subcommands',
-                                       help='additional help',
                                        dest='subparser_name')
+
     parser_get_permissions = subparsers.add_parser('get-permissions')
     parser_get_permissions.add_argument('user', type=str, help='user or service account')
 
@@ -101,6 +139,10 @@ def main():
 
     subparsers.add_parser('get-users')
 
+    parser_get_audited_permissions = subparsers.add_parser('get-least-privilege')
+    parser_get_audited_permissions.add_argument('user', type=str, help='user or service account')
+    parser_get_audited_permissions.add_argument('log', type=str, help='path to audit log')
+
     args = parser.parse_args()
     if args.subparser_name == 'get-roles':
         pprint.pprint(get_roles(args.user))
@@ -110,6 +152,11 @@ def main():
         pprint.pprint(get_audited_permissions(args.user, args.log))
     elif args.subparser_name == 'get-users':
         pprint.pprint(get_users())
+    elif args.subparser_name == 'get-least-privilege':
+        role, role_binding = get_least_privilege_role(args.user, args.log)
+        print(yaml.dump(role, default_flow_style=False))
+        print('---')
+        print(yaml.dump(role_binding, default_flow_style=False))
 
 
 if __name__ == '__main__':

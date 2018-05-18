@@ -1,5 +1,6 @@
 name: "rbac"
 shortDesc: "Inspect RBAC related properties"
+command: './venv/bin/python rbac.py'
 tree:
   - name: get-roles
     shortDesc: "Get roles for user"

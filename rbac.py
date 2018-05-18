@@ -2,12 +2,22 @@ import os
 import sys
 import json
 import pprint
+import argparse
 import subprocess
 from collections import defaultdict
 
 
 NAMESPACE = os.environ.get('KUBECTL_PLUGINS_CURRENT_NAMESPACE')
 KUBECTL_PATH = os.environ.get('KUBECTL_PLUGINS_CALLER')
+
+
+def parse_all_users_from_role_bindings(role_bindings):
+    users = set()
+    for role in role_bindings['items']:
+        if role['subjects'] is not None:
+            for subject in role['subjects']:
+                users.add(subject['name'])
+    return users
 
 
 def parse_roles(user, role_bindings):
@@ -63,20 +73,44 @@ def get_audited_permissions(user, audit_log_filepath):
     return dict(permissions)
 
 
-def main(subcommand, user, *args):
-    if subcommand == 'get-permissions':
-        pprint.pprint(get_permissions(user))
-    elif subcommand == 'get-roles':
-        pprint.pprint(get_roles(user))
-    elif subcommand == 'get-audited-permissions':
-        if len(args) == 0:
-            print('json audit log file must be provided')
-            exit(1)
-        pprint.pprint(get_audited_permissions(user, args[0]))
+def get_users():
+    cluster_role_bindings = json.loads(subprocess.getoutput(f'{KUBECTL_PATH} -n {NAMESPACE} get clusterrolebindings -o json'))
+    users = parse_all_users_from_role_bindings(cluster_role_bindings)
+
+    roles = json.loads(subprocess.getoutput(f'{KUBECTL_PATH} -n {NAMESPACE} get rolebindings -o json'))
+    users.union(parse_all_users_from_role_bindings(roles))
+
+    return users
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(title='subcommands',
+                                       description='valid subcommands',
+                                       help='additional help',
+                                       dest='subparser_name')
+    parser_get_permissions = subparsers.add_parser('get-permissions')
+    parser_get_permissions.add_argument('user', type=str, help='user or service account')
+
+    parser_get_roles = subparsers.add_parser('get-roles')
+    parser_get_roles.add_argument('user', type=str, help='user or service account')
+
+    parser_get_audited_permissions = subparsers.add_parser('get-audited-permissions')
+    parser_get_audited_permissions.add_argument('user', type=str, help='user or service account')
+    parser_get_audited_permissions.add_argument('log', type=str, help='path to audit log')
+
+    subparsers.add_parser('get-users')
+
+    args = parser.parse_args()
+    if args.subparser_name == 'get-roles':
+        pprint.pprint(get_roles(args.user))
+    elif args.subparser_name == 'get-permissions':
+        pprint.pprint(get_permissions(args.user))
+    elif args.subparser_name == 'get-audited-permissions':
+        pprint.pprint(get_audited_permissions(args.user, args.log))
+    elif args.subparser_name == 'get-users':
+        pprint.pprint(get_users())
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print('user/service-account must be provided')
-        exit(1)
-    main(sys.argv[1], sys.argv[2], *sys.argv[3:])
+    main()

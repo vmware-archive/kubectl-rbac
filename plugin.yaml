@@ -1,20 +1,24 @@
 name: "rbac"
 shortDesc: "Inspect RBAC related properties"
-command: './venv/bin/python rbac.py'
+command: './venv/bin/python ./kubectl_rbac/rbac.py'
 tree:
   - name: get-roles
     shortDesc: "Get roles for user"
     example: "kubectl plugin rbac get-roles system:node"
-    command: "./venv/bin/python rbac.py get-roles"
+    command: "./venv/bin/python ./kubectl_rbac/rbac.py get-roles"
   - name: get-permissions
     shortDesc: "Get permissions for user"
     example: "kubectl plugin rbac get-permissions system:node"
-    command: "./venv/bin/python rbac.py get-permissions"
+    command: "./venv/bin/python ./kubectl_rbac/rbac.py get-permissions"
   - name: get-audited-permissions
     shortDesc: "Get used permissions as audited in the audit-log"
     example: "kubectl plugin rbac get-audited-permissions user@octarine.com audit_log.json"
-    command: "./venv/bin/python rbac.py get-audited-permissions"
+    command: "./venv/bin/python ./kubectl_rbac/rbac.py get-audited-permissions"
   - name: get-least-privilege
     shortDesc: "Generate least privilege yaml based on audit log"
     example: "kubectl plugin get-least-privilege user@octarine.com audit_log.json"
-    command: "./venv/bin/python rbac.py get-least-privilege"
+    command: "./venv/bin/python ./kubectl_rbac/rbac.py get-least-privilege"
+  - name: get-unused-permissions
+    shortDesc: "Get unused permissions for specific user"
+    example: "kubectl plugin get-unused user@octarine.com audit_log.json"
+    command: "./venv/bin/python ./kubectl_rbac/rbac.py get-unused-permissions"

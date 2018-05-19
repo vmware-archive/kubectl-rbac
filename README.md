@@ -3,10 +3,13 @@
 ## Overview
 This purpose of this plugin is to help kubernetes admin interact
 with [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) (Role-Based Access Control) and fine-tune permissions
-for users and service-accounts on nodes.
+for users and service-accounts on pods.
+
+You can take a look at the [blogpost](https://docs.google.com/document/d/1EN3A4VBCRezA5K4D_DLRw6S57LvQK-UjoKtrsEZkP68/edit?ts=5aff414b#heading=h.f1sukdte39kj) (CHANGEME TO PRODUCTION BLOG! BEFORE OPEN SOURCING) where we go through basic concepts of RBAC and motiviation for this tool
 
 ## Installation
-You can read about Kubernetes Plugin [here](https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/).
+This tool can used as a standalone tool or k8s plugin.
+You can read about Kubernetes Plugin framework [here](https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/).
 
 ```bash
 cd ~/.kube/
@@ -38,21 +41,30 @@ Use "kubectl options" for a list of global command-line options (applies to all 
 ```
 #### Get Permissions for user/service-account
 ```bash
-kubectl plugin rbac get-permissions kube-dns
+kubectl plugin rbac get-permissions user@octarinesec.com
 ```
 Output
 ```text
 [[{'apiGroups': [''],
-   'resources': ['endpoints', 'services'],
-   'verbs': ['list', 'watch']}]]
+  'resources': ['clusterrolebindings',
+                'clusterroles',
+                'roles',
+                'rolebindings'],
+  'verbs': ['list']
+  },
+ {'apiGroups': [''],
+  'resources': ['clusterroles', 'clusterrolebindings'],
+  'verbs': ['get']
+  }]]
 ```
+
 #### Get roles (cluster-roles and roles) for user/service-account
 ```bash
-kubectl plugin rbac get-roles kube-dns
+kubectl plugin rbac get-roles user@octarinesec.com
 ```
 Output
 ```text
-['system:kube-dns']
+['octarine-role:user@octarinesec.com']
 ```
 #### Get used permissions for user from audit-log
 This assumes the audit log is enabled for the data you would
@@ -63,11 +75,78 @@ like to analyze.
 
 
 ```bash
-kubectl plugin rbac get-audited-permissions kube-dns log.json
+kubectl plugin rbac get-audited-permissions user@octarinesec.com kubectl_rbac/tests/audit_log.json
 ```
 Output
 ```text
-{'core/v1/namespaces/kube-system/configmaps/kube-dns-autoscaler': {'io.k8s.core.v1.configmaps.get'},
- 'core/v1/nodes': {'io.k8s.core.v1.nodes.list'},
- 'extensions/v1beta1/namespaces/kube-system/deployments/kube-dns/scale': {'io.k8s.extensions.v1beta1.deployments.scale.get'}}
+ {...
+ 'rbac.authorization.k8s.io/v1/clusterroles/system:basic-user': {'io.k8s.authorization.rbac.v1.clusterroles.get'},
+ 'rbac.authorization.k8s.io/v1/clusterroles/system:certificates.k8s.io:certificatesigningrequests:nodeclient': {'io.k8s.authorization.rbac.v1.clusterroles.get'},
+ 'rbac.authorization.k8s.io/v1/clusterroles/system:certificates.k8s.io:certificatesigningrequests:selfnodeclient': {'io.k8s.authorization.rbac.v1.clusterroles.get'},
+ 'rbac.authorization.k8s.io/v1/clusterroles/system:controller:attachdetach-controller': {'io.k8s.authorization.rbac.v1.clusterroles.get'},
+ 'rbac.authorization.k8s.io/v1/namespaces/default/rolebindings': {'io.k8s.authorization.rbac.v1.rolebindings.list'},
+ 'rbac.authorization.k8s.io/v1/namespaces/default/roles': {'io.k8s.authorization.rbac.v1.roles.list'}}
 ```
+
+#### Get least privilege yaml for specific user based on the audit log
+```bash
+kubectl plugin rbac get-least-privilege user@octarinesec.com kubectl_rbac/tests/audit_log.json
+```
+Output
+```text
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: octarine:user@octarinesec.com
+  namespace: default
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - clusterroles
+  - clusterrolebindings
+  - rolebindings
+  - roles
+  verbs:
+  - list
+- apiGroups:
+  - ''
+  resources:
+  - clusterroles
+  - clusterrolebindings
+  verbs:
+  - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: octarine:user@octarinesec.com
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: octarine:user@octarinesec.com
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: user@octarinesec.com
+```
+
+You can pipe this output to roles.yaml and run ```bash kubectl -f create roles.yaml```
+
+#### Get unused privileges for specific user based on the audit log
+```bash
+kubectl plugin rbac get-unused-permissions user@octarinesec.com kubectl_rbac/tests/audit_log.json
+```
+Output
+```text
+{'create': set(),
+ 'delete': set(),
+ 'get': set(),
+ 'list': set(),
+ 'patch': set(),
+ 'update': set(),
+ 'watch': set()}
+```
+We can see that our user is configured properly and he has the least privilege permissions  

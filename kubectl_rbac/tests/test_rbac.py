@@ -96,6 +96,16 @@ class TestKubeRBAC(unittest.TestCase):
         role, rolebinding = RBAC.get_least_privilege_role(self.TEST_USER, './audit_log.json')
         self.assertTrue(TestKubeRBAC._compare_roles(role, self.TEST_LEAST_PRIVILEGE_ROLE))
 
+    def test_get_unused_privilege_role(self):
+        verbs = ["get", "list", "watch", "create", "update", "patch", "delete"]
+        empty_verb_to_resource = {k: set() for k in verbs}
+        rbac = RBAC('default', None)
+        rbac._get_namespace_roles = MagicMock(return_value=self.TEST_ROLES)
+        rbac._get_cluster_roles = MagicMock(return_value={'items': []})
+        rbac._get_namespace_role_bindings = MagicMock(return_value=self.TEST_ROLE_BINDINGS)
+        rbac._get_cluster_role_bindings = MagicMock(return_value={'items': []})
+        self.assertEqual(rbac.get_unused_permissions(self.TEST_USER, './audit_log.json'), empty_verb_to_resource)
+
 
 if __name__ == '__main__':
     unittest.main()

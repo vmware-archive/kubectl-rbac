@@ -1,6 +1,7 @@
 import os
 import yaml
 import json
+import copy
 import pprint
 import argparse
 import subprocess
@@ -15,6 +16,15 @@ class RBAC(object):
     def __init__(self, namespace, kubectl_path):
         self._namespace = namespace
         self._kubectl_path = kubectl_path
+
+    @staticmethod
+    def _get_verb_to_resource(role):
+        verbs = ["get", "list", "watch", "create", "update", "patch", "delete"]
+        verb_to_resource = {k: set() for k in verbs}
+        for rule in role['rules']:
+            for verb in rule['verbs']:
+                verb_to_resource[verb] = verb_to_resource[verb].union(rule['resources'])
+        return verb_to_resource
 
     @staticmethod
     def _parse_roles(user, role_bindings):
@@ -135,6 +145,36 @@ class RBAC(object):
         ROLE['rules'] = rules
 
         return ROLE, ROLE_BINDING
+
+    def get_unused_permissions(self, user, audit_log_filepath):
+        verbs = ["get", "list", "watch", "create", "update", "patch", "delete"]
+        verb_to_resource = {k: set() for k in verbs}
+        assigned_permissions = self.get_permissions(user)
+        least_privilege_role, _ = self.get_least_privilege_role(user, audit_log_filepath)
+        least_privilege_role = RBAC._get_verb_to_resource(least_privilege_role)
+        for i in assigned_permissions:
+            for perm in i:
+                if 'apiGroups' in perm:
+                    for verb in perm['verbs']:
+                        if verb == '*':
+                            for v in verbs:
+                                if '*' in perm['resources']:
+                                    verb_to_resource[v] = {'*'}
+                                else:
+                                    verb_to_resource[v] = verb_to_resource[v].union(perm['resources'])
+                        else:
+                            if '*' in perm['resources']:
+                                verb_to_resource[verb] = {'*'}
+                            else:
+                                verb_to_resource[verb] = verb_to_resource[verb].union(perm['resources'])
+
+        unused_permissions = copy.deepcopy(verb_to_resource)
+        for verb, resources in verb_to_resource.items():
+            unused_permissions[verb] = resources.difference(least_privilege_role[verb])
+            if '*' in unused_permissions[verb]:
+                unused_permissions[verb].remove('*')
+                unused_permissions[verb] = unused_permissions[verb].union([f'*-{i}' for i in least_privilege_role[verb]])
+        return unused_permissions
 
 
 def main():

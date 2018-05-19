@@ -149,4 +149,9 @@ Output
  'update': set(),
  'watch': set()}
 ```
-We can see that our user is configured properly and he has the least privilege permissions  
+We can see that our user is configured properly and he has the least privilege permissions
+
+## Testing
+```text
+nosetests
+```

@@ -1,3 +1,4 @@
+import os
 import json
 import pprint
 import unittest
@@ -6,7 +7,13 @@ from kubectl_rbac.rbac import RBAC
 from kubectl_rbac.tests.audited_permissions import TEST_AUDITED_PERMISSIONS
 
 
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+
+
 class TestKubeRBAC(unittest.TestCase):
+    AUDIT_LOG_PATH = os.path.join(DIR_PATH, 'audit_log.json')
+    ROLE_BINDINGS_PATH = os.path.join(DIR_PATH, 'rolebindings.json')
+    ROLES_PATH = os.path.join(DIR_PATH, 'roles.json')
     TEST_USER = 'user@octarinesec.com'
     TEST_ROLE = 'octarine-role:user@octarinesec.com'
     TEST_PERMISSIONS = [[{'apiGroups': [''],
@@ -34,12 +41,10 @@ class TestKubeRBAC(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(TestKubeRBAC, self).__init__(*args, **kwargs)
-        with open('./rolebindings.json', 'r') as f:
+        with open(self.ROLE_BINDINGS_PATH, 'r') as f:
             self.TEST_ROLE_BINDINGS = json.load(f)
-        with open('./roles.json', 'r') as f:
+        with open(self.ROLES_PATH, 'r') as f:
             self.TEST_ROLES = json.load(f)
-        with open('./audit_log.json', 'r') as f:
-            self.TEST_AUDIT_LOG = json.load(f)
 
     @staticmethod
     def _get_verb_to_resource(role):
@@ -89,11 +94,11 @@ class TestKubeRBAC(unittest.TestCase):
         self.assertEqual(rbac.get_users(), {self.TEST_USER})
 
     def test_get_audited_permissions(self):
-        audited_permissions = RBAC.get_audited_permissions(self.TEST_USER, './audit_log.json')
+        audited_permissions = RBAC.get_audited_permissions(self.TEST_USER, self.AUDIT_LOG_PATH)
         self.assertEqual(audited_permissions, TEST_AUDITED_PERMISSIONS)
 
     def test_get_least_privilege_role(self):
-        role, rolebinding = RBAC.get_least_privilege_role(self.TEST_USER, './audit_log.json')
+        role, rolebinding = RBAC.get_least_privilege_role(self.TEST_USER, self.AUDIT_LOG_PATH)
         self.assertTrue(TestKubeRBAC._compare_roles(role, self.TEST_LEAST_PRIVILEGE_ROLE))
 
     def test_get_unused_privilege_role(self):
@@ -104,7 +109,7 @@ class TestKubeRBAC(unittest.TestCase):
         rbac._get_cluster_roles = MagicMock(return_value={'items': []})
         rbac._get_namespace_role_bindings = MagicMock(return_value=self.TEST_ROLE_BINDINGS)
         rbac._get_cluster_role_bindings = MagicMock(return_value={'items': []})
-        self.assertEqual(rbac.get_unused_permissions(self.TEST_USER, './audit_log.json'), empty_verb_to_resource)
+        self.assertEqual(rbac.get_unused_permissions(self.TEST_USER, self.AUDIT_LOG_PATH), empty_verb_to_resource)
 
 
 if __name__ == '__main__':

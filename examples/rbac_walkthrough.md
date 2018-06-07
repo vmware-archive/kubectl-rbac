@@ -141,5 +141,5 @@ We are secured:)
 Here is an awful long one-liner to check weather a given pod has rbac enabled/disabled and which read permissions it has
  
 ```bash
-kubectl exec $(POD_NAME) -- bash -c apt update && apt install -y curl && curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+kubectl exec $(POD_NAME) -- bash -c "apt update && apt install -y curl && curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"
 ```

@@ -5,7 +5,7 @@ This purpose of this plugin is to help kubernetes admin interact
 with [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) (Role-Based Access Control) and fine-tune permissions
 for users and service-accounts on pods.
 
-You can take a look at the [blogpost](https://docs.google.com/document/d/1EN3A4VBCRezA5K4D_DLRw6S57LvQK-UjoKtrsEZkP68/edit?ts=5aff414b#heading=h.f1sukdte39kj) (CHANGEME TO PRODUCTION BLOG! BEFORE OPEN SOURCING) where we go through basic concepts of RBAC and motiviation for this tool
+You can take a look at the [blogpost](https://medium.com/@haim_50405/establish-least-privileged-best-practice-for-your-kubernetes-clusters-f0785e1aee39) where we go through basic concepts of RBAC and motiviation for this tool
 
 ## Installation
 This tool can used as a standalone tool or k8s plugin.

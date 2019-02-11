@@ -5,11 +5,12 @@ import copy
 import pprint
 import argparse
 import subprocess
+from distutils.spawn import find_executable
 from collections import defaultdict
 
 
-NAMESPACE = os.environ.get('KUBECTL_PLUGINS_CURRENT_NAMESPACE')
-KUBECTL_PATH = os.environ.get('KUBECTL_PLUGINS_CALLER')
+KUBECTL_PATH = find_executable("kubectl")
+NAMESPACE = subprocess.check_output([KUBECTL_PATH, "config", "current-context"]).decode('utf-8').split("/")[0]
 
 
 class RBAC(object):

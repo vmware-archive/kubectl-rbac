@@ -17,7 +17,7 @@ NAMESPACE = subprocess.check_output([KUBECTL_PATH, 'config', 'view', '--minify',
 
 class RBAC(object):
     def __init__(self, namespace, kubectl_path):
-        print(f"My namespace is {self._namespace}")
+        self._namespace = namespace
         self._kubectl_path = kubectl_path
 
     @staticmethod

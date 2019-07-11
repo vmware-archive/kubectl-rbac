@@ -1,0 +1,4 @@
+#!/usr/bin/env python
+
+import kubectl_rbac
+kubectl_rbac.rbac.main()

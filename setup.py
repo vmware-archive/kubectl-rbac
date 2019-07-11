@@ -17,6 +17,11 @@ setup(name='kubectl-rbac',
       author_email='info@octarinesec.com',
       url='https://github.com/octarinesec/kubectl-rbac',
       packages=['kubectl_rbac'],
+      entry_points = {
+          'console_scripts': [
+              'kubectl-rbac = kubectl_rbac.rbac:main'
+              ]
+      },
       classifiers=['Intended Audience :: Developers',
                    'Natural Language :: English',
                    'License :: OSI Approved :: MIT License',
